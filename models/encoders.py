@@ -7,6 +7,7 @@ import torchvision.models as torchvision_models
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
+
 class image_encoder(nn.Module):
 
     def __init__(self, backbone):
