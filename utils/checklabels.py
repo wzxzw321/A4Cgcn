@@ -96,9 +96,9 @@ def check_label_dir(label_dir):
     return '\n'.join(report)
 
 if __name__ == "__main__":
-    LABEL_DIR = YOLO_DATASET_PATH + "/train/labels"
+    LABEL_DIR = YOLO_DATASET_ORG_PATH + "/train/labels"
     print(check_label_dir(LABEL_DIR))
-    LABEL_DIR = YOLO_DATASET_PATH + "/test/labels"
+    LABEL_DIR = YOLO_DATASET_ORG_PATH + "/test/labels"
     print(check_label_dir(LABEL_DIR))
-    LABEL_DIR = YOLO_DATASET_PATH + "/val/labels"
+    LABEL_DIR = YOLO_DATASET_ORG_PATH + "/val/labels"
     print(check_label_dir(LABEL_DIR))

@@ -5,7 +5,6 @@ import sys
 from configs.CONST import *
 
 def is_closed(points):
-    # 检查首尾点是否重合
     return len(points) >= 3 and points[0] == points[-1]
 
 def check_polygon(points):
@@ -52,23 +51,22 @@ def json_to_yolo(json_path, output_dir):
             continue
 
         points = []
-        valid = True  # 新增验证标志
+        valid = True
         for x, y in shape["points"]:
             nx = max(0.0, min(round(x / img_w, 6), 1.0))
             ny = max(0.0, min(round(y / img_h, 6), 1.0))
 
-            # 修改点：当坐标异常时标记为无效
+            # 当坐标异常时标记为无效
             if nx < 0 or nx > 1 or ny < 0 or ny > 1:
                 print(f"错误: {json_path} 坐标异常 ({x}/{img_w}={nx}, {y}/{img_h}={ny})")
                 valid = False
-                # 不再继续处理该多边形的其他点
                 break
 
             points.extend([nx, ny])
 
         if not valid:
             print(f"警告: 跳过无效多边形 - {shape['label']}")
-            continue  # 新增跳过逻辑
+            continue
 
         txt_content.append(f"{class_id} " + " ".join(map(str, points)))
 
@@ -77,7 +75,7 @@ def json_to_yolo(json_path, output_dir):
         output_path = os.path.join(output_dir, f"{base_name}.txt")
         with open(output_path, 'w') as f:
             f.write("\n".join(txt_content))
-        return True  # 新增返回值
+        return True
     except Exception as e:
         print(f"错误: 无法写入文件 {output_path} - {str(e)}")
         return False
@@ -88,7 +86,7 @@ def batch_convert(json_dir, output_root):
     json_dir = os.path.abspath(json_dir)
     output_root = os.path.abspath(output_root)
 
-    # 新增初始检查
+    # 初始检查
     json_files = []
     for root, _, files in os.walk(json_dir):
         for file in files:
@@ -98,14 +96,14 @@ def batch_convert(json_dir, output_root):
         print("错误: JSON文件夹中没有JSON文件")
         sys.exit(1)
 
-    # 新增目标文件夹检查
+    # 目标文件夹检查
     if os.path.exists(output_root):
         if os.listdir(output_root):
             print(f"警告: 目标文件夹 {output_root} 不为空，将覆盖已有文件")
     else:
         os.makedirs(output_root, exist_ok=True)
 
-    # 新增计数器
+    # 计数器
     json_count = 0
     txt_count = 0
     png_count = 0
@@ -126,14 +124,13 @@ def batch_convert(json_dir, output_root):
             shutil.copy2(png_path, os.path.join(output_dir, os.path.basename(png_path)))
             png_count += 1
 
-    # 新增统计输出
+    # 统计输出
     print(f"\n转换结果:")
     print(f"成功处理 {json_count} 个JSON文件")
     print(f"生成 {txt_count} 个TXT文件")
     print(f"复制 {png_count} 个PNG文件")
 
 if __name__ == "__main__":
-    # 使用绝对路径配置
     JSON_ROOT = LABELME_PATH
     OUTPUT_ROOT = TRANSLABEL_PATH
 
