@@ -2,6 +2,7 @@ import os
 import cv2
 import numpy as np
 from tqdm import tqdm
+from configs.CONST import *
 
 # 配置绝对路径
 IMAGE_ROOT = "/home/ygz/ZC/HUS/HUS_ImgSeg/yolov8_dataset/val/images"  # 图片根目录

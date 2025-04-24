@@ -2,67 +2,59 @@ import os
 import random
 import shutil
 from tqdm import tqdm
+from configs.CONST import *
 
-# 源目录配置
-source_dir = "/home/ygz/ZC/HUS/HUS_ImgSeg/yolov8_dataset/CobotDataset_A4C"
-train_dir = "/home/ygz/ZC/HUS/HUS_ImgSeg/yolov8_dataset/train/images"
-val_dir = "/home/ygz/ZC/HUS/HUS_ImgSeg/yolov8_dataset/val/images"
-test_dir = "/home/ygz/ZC/HUS/HUS_ImgSeg/yolov8_dataset/test/images"
 
-# 删除旧目录（新增json目录清理）
-dirs_to_remove = [
-    train_dir, val_dir, test_dir,
-    train_dir.replace("images", "img_json"),
-    val_dir.replace("images", "img_json"),
-    test_dir.replace("images", "img_json")
-]
-for dir_path in dirs_to_remove:
-    if os.path.exists(dir_path):
-        shutil.rmtree(dir_path)
+def split_dataset(source_dir, target_root):
+    random.seed(SEED)
+    # 配置目标路径
+    splits = ['train', 'val', 'test']
+    labels_dirs = [os.path.join(target_root, split, 'labels') for split in splits]
+    images_dirs = [os.path.join(target_root, split, 'images') for split in splits]
 
-# 创建目标目录（新增json目录创建）
-os.makedirs(train_dir.replace("images", "img_json"), exist_ok=True)
-os.makedirs(val_dir.replace("images", "img_json"), exist_ok=True)
-os.makedirs(test_dir.replace("images", "img_json"), exist_ok=True)
-os.makedirs(train_dir, exist_ok=True)
-os.makedirs(val_dir, exist_ok=True)
-os.makedirs(test_dir, exist_ok=True)
+    # 创建目录结构
+    for split_dir in labels_dirs + images_dirs:
+        os.makedirs(split_dir, exist_ok=True)
 
-# 获取所有PNG文件并打乱顺序
-png_files = [f for f in os.listdir(source_dir) if f.endswith('.png')]
-random.shuffle(png_files)
+    # 获取并打乱所有txt文件路径
+    txt_files = []
+    for root, _, files in os.walk(source_dir):
+        for file in files:
+            if file.endswith('.txt'):
+                txt_files.append(os.path.join(root, file))
+    random.shuffle(txt_files)
 
-# 计算分割点
-total = len(png_files)
-train_end = int(total * 0.8)
-val_end = train_end + int(total * 0.1)
+    # 计算分割点
+    total = len(txt_files)
+    train_end = int(total * 0.8)
+    val_end = train_end + int(total * 0.1)
 
-# 文件复制流程
-for i, png_file in enumerate(tqdm(png_files, desc='Processing files')):
-    base_name = os.path.splitext(png_file)[0]
-    json_file = f"{base_name}.json"
+    # 执行文件复制
+    for i, txt_path in enumerate(tqdm(txt_files, desc='Processing')):
+        # 确定目标目录
+        if i < train_end:
+            split_index = 0  # train
+        elif i < val_end:
+            split_index = 1  # val
+        else:
+            split_index = 2  # test
 
-    src_png = os.path.join(source_dir, png_file)
-    src_json = os.path.join(source_dir, json_file)
+        # 复制标签文件
+        txt_name = os.path.basename(txt_path)
+        shutil.copy2(txt_path, os.path.join(labels_dirs[split_index], txt_name))
 
-    # 确定目标路径
-    if i < train_end:
-        img_dest = train_dir
-        json_dest = img_dest.replace("images", "img_json")
-    elif i < val_end:
-        img_dest = val_dir
-        json_dest = img_dest.replace("images", "img_json")
-    else:
-        img_dest = test_dir
-        json_dest = img_dest.replace("images", "img_json")
+        # 复制对应的图片文件
+        png_path = os.path.join(os.path.dirname(txt_path), txt_name.replace('.txt', '.png'))
+        if os.path.exists(png_path):
+            shutil.copy2(png_path, os.path.join(images_dirs[split_index], os.path.basename(png_path)))
+        else:
+            print(f"警告: 找不到对应的PNG文件 {png_path}")
 
-    # 复制图片到images目录
-    shutil.copy(src_png, os.path.join(img_dest, png_file))
 
-    # 复制JSON到img_json目录
-    if os.path.exists(src_json):
-        shutil.copy(src_json, os.path.join(json_dest, json_file))
-    else:
-        print(f"警告: 找不到对应的JSON文件 {json_file}")
+if __name__ == "__main__":
+    # 配置路径
+    SOURCE_DIR = TRANSLABEL_PATH  # 替换为实际源路径
+    TARGET_ROOT = YOLO_DATASET_PATH  # 替换为实际目标路径
 
-print(f"数据集分割完成：\n训练集: {train_end} 个\n验证集: {val_end - train_end} 个\n测试集: {total - val_end} 个")
+    split_dataset(SOURCE_DIR, TARGET_ROOT)
+    print("数据集分割完成！")

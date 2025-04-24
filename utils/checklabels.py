@@ -1,7 +1,7 @@
 import os
 import cv2
 import numpy as np
-
+from configs.CONST import *
 def check_label_file(txt_path, num_classes=11):
     """检查单个标签文件的合法性"""
     errors = []
@@ -96,5 +96,9 @@ def check_label_dir(label_dir):
     return '\n'.join(report)
 
 if __name__ == "__main__":
-    LABEL_DIR = "/home/ygz/ZC/HUS/HUS_ImgSeg/yolov8_dataset/train_test/labels"  # 需要检查的目录
+    LABEL_DIR = YOLO_DATASET_PATH + "/train/labels"
+    print(check_label_dir(LABEL_DIR))
+    LABEL_DIR = YOLO_DATASET_PATH + "/test/labels"
+    print(check_label_dir(LABEL_DIR))
+    LABEL_DIR = YOLO_DATASET_PATH + "/val/labels"
     print(check_label_dir(LABEL_DIR))
