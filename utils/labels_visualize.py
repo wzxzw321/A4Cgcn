@@ -4,10 +4,9 @@ import numpy as np
 from tqdm import tqdm
 from configs.CONST import *
 
-# 配置绝对路径
-IMAGE_ROOT = "/home/ygz/ZC/HUS/HUS_ImgSeg/yolov8_dataset/val/images"  # 图片根目录
-LABEL_ROOT = "/home/ygz/ZC/HUS/HUS_ImgSeg/yolov8_dataset/val/labels"  # 标签目录
-VIS_ROOT = "/home/ygz/ZC/HUS/HUS_ImgSeg/yolov8_dataset/val/visualization"  # 输出目录
+IMAGE_ROOT = YOLO_DATASET_ORG_PATH + "/images"
+LABEL_ROOT = YOLO_DATASET_ORG_PATH + "/labels"
+VIS_ROOT = YOLO_DATASET_ORG_PATH + "/visualization"
 
 # 类别颜色映射（与my_traindata.yml中的names顺序一致）
 COLORS = [

@@ -8,6 +8,9 @@ from configs.CONST import *
 def split_dataset(source_dir, target_root):
     random.seed(SEED)
 
+    source_labels = os.path.join(source_dir, 'labels')
+    source_images = os.path.join(source_dir, 'images')
+
     splits = ['train', 'val', 'test']
     labels_dirs = [os.path.join(target_root, split, 'labels') for split in splits]
     images_dirs = [os.path.join(target_root, split, 'images') for split in splits]
@@ -16,7 +19,7 @@ def split_dataset(source_dir, target_root):
         os.makedirs(split_dir, exist_ok=True)
 
     txt_files = []
-    for root, _, files in os.walk(source_dir):
+    for root, _, files in os.walk(source_labels):
         for file in files:
             if file.endswith('.txt'):
                 txt_files.append(os.path.join(root, file))
@@ -41,7 +44,11 @@ def split_dataset(source_dir, target_root):
         shutil.copy2(txt_path, os.path.join(labels_dirs[split_index], txt_name))
 
         # 复制对应的图片文件
-        png_path = os.path.join(os.path.dirname(txt_path), txt_name.replace('.txt', '.png'))
+        png_path = os.path.join(
+            source_images,
+            os.path.relpath(os.path.dirname(txt_path), source_labels),  # 保持相对路径
+            txt_name.replace('.txt', '.png')
+        )
         if os.path.exists(png_path):
             shutil.copy2(png_path, os.path.join(images_dirs[split_index], os.path.basename(png_path)))
         else:
@@ -49,8 +56,8 @@ def split_dataset(source_dir, target_root):
 
 
 if __name__ == "__main__":
-    SOURCE_DIR = TRANSLABEL_PATH
-    TARGET_ROOT = YOLO_DATASET_ORG_PATH
+    SOURCE_DIR = YOLO_DATASET_ORG_PATH
+    TARGET_ROOT = YOLO_DATASET_PATH
 
     split_dataset(SOURCE_DIR, TARGET_ROOT)
     print("数据集分割完成！")
