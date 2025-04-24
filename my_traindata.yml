@@ -1,0 +1,21 @@
+# 数据集元数据
+path: /home/ygz/ZC/HUS/HUS_ImgSeg/yolov8_dataset  # 数据集根目录
+train: train/images  # 训练集相对路径
+val: val/images      # 验证集相对路径
+test: test/images    # 测试集相对路径
+
+names:
+  0: RV  # 右室
+  1: LV  # 左室
+  2: RA  # 右房
+  3: LA  # 左房
+  4: IVS  # 室间隔
+  5: IAS  # 房间隔
+  6: Ao  # 主动脉
+  7: MV  # 二尖瓣
+  8: TV  # 三尖瓣
+  9: PA  # 肺动脉
+  10: PM  # 乳头肌
+
+nc: 11  # 类别总数
+
