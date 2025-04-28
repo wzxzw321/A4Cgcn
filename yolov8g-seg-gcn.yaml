@@ -13,7 +13,7 @@ scales: # model compound scaling constants, i.e. 'model=yolov8n-seg.yaml' will c
   m: [0.67, 0.75, 768]
   l: [1.00, 1.00, 512]
   x: [1.00, 1.25, 512]
-  g: [0.67, 0.75, 768]
+  g: [1.00, 1.25, 512]
 
 # YOLOv8.0n backbone
 backbone:
@@ -45,6 +45,6 @@ head:
 
   - [-1, 1, Conv, [512, 3, 2]]
   - [[-1, 9], 1, Concat, [1]] # cat head P5
-  - [-1, 3, C2f, [1024]] # 21 (P5/32-large)
+  - [-1, 3, C2f, [1024]] # 21 (P5/32-large) # 后加gcn
 
   - [[15, 18, 21], 1, Segment, [nc, 32, 256]] # Segment(P3, P4, P5)
