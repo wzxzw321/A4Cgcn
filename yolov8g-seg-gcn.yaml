@@ -4,8 +4,8 @@
 # Model docs: https://docs.ultralytics.com/models/yolov8
 # Task docs: https://docs.ultralytics.com/tasks/segment
 
-# Parameters
-nc: 80 # number of classes
+# Parameters not P6
+nc: 11 # number of classes
 scales: # model compound scaling constants, i.e. 'model=yolov8n-seg.yaml' will call yolov8-seg.yaml with scale 'n'
   # [depth, width, max_channels]
   n: [0.33, 0.25, 1024]
@@ -29,22 +29,43 @@ backbone:
   - [-1, 3, C2f, [1024, True]]
   - [-1, 1, SPPF, [1024, 5]] # 9
 
-# YOLOv8.0n head
+# YOLO head
 head:
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
-  - [[-1, 6], 1, Concat, [1]] # cat backbone P4
-  - [-1, 3, C2f, [512]] # 12
+  # 上采样并融合 P4 特征
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]        # 10
+  - [[-1, 6], 1, Concat, [1]]                         # 11（融合backbone P4）
+  - [-1, 3, C2f, [512]]                               # 12（P4 处理）
 
-  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
-  - [[-1, 4], 1, Concat, [1]] # cat backbone P3
-  - [-1, 3, C2f, [256]] # 15 (P3/8-small)
+  # 上采样并融合 P3 特征
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]        # 13
+  - [[-1, 4], 1, Concat, [1]]                         # 14（融合backbone P3）
+  - [-1, 3, C2f, [256]]                               # 15（P3 原始输出）
 
-  - [-1, 1, Conv, [256, 3, 2]]
-  - [[-1, 12], 1, Concat, [1]] # cat head P4
-  - [-1, 3, C2f, [512]] # 18 (P4/16-medium)
+  # 插入 GCN 模块并合并增强特征（P3 分支）
+  - [-1, 1, ARGRModule, [3]]                          # 16（GCN 增强）
+  - [[-1, 15], 1, Concat, [1]]                        # 17（合并 P3 原始 + GCN 增强）
 
-  - [-1, 1, Conv, [512, 3, 2]]
-  - [[-1, 9], 1, Concat, [1]] # cat head P5
-  - [-1, 3, C2f, [1024]] # 21 (P5/32-large) # 后加gcn
+  # 下采样并融合 P4 特征（重建 P4 分支）
+  - [15, 1, Conv, [256, 3, 2]]                        # 18（输入改为 P3 原始输出）
+  - [[-1, 12], 1, Concat, [1]]                        # 19（融合head P4）
+  - [-1, 3, C2f, [512]]                               # 20（P4 原始输出）
 
-  - [[15, 18, 21], 1, Segment, [nc, 32, 256]] # Segment(P3, P4, P5)
+  # 插入 GCN 模块并合并增强特征（P4 分支）
+  - [-1, 1, ARGRModule, [3]]                          # 21（GCN 增强）
+  - [[-1, 20], 1, Concat, [1]]                        # 22（合并 P4 原始 + GCN 增强）
+
+  # 下采样并融合 P5 特征（重建 P5 分支）
+  - [20, 1, Conv, [512, 3, 2]]                        # 23（输入改为 P4 原始输出）
+  - [[-1, 9], 1, Concat, [1]]                         # 24（融合head P5）
+  - [-1, 3, C2f, [1024]]                              # 25（P5 原始输出）
+
+  # 插入 GCN 模块并合并增强特征（P5 分支）
+  - [-1, 1, ARGRModule, [3]]                          # 26（GCN 增强）
+  - [[-1, 25], 1, Concat, [1]]                        # 27（合并 P5 原始 + GCN 增强）
+
+#  - [[15, 20, 25], 1, Concat, [1]]
+
+  # Segment 模块（输入：P3/P4/P5 的 GCN 增强特征）
+  - [[17, 22, 27], 1, Segment, [nc, 32, 256]]         # 28（最终分割头）
+
+#  - [[15, 20, 25], 1, Segment, [nc, 32, 256]]

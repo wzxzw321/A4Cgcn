@@ -16,6 +16,10 @@ from ultralytics.nn.tasks import (
     YOLOESegModel,
 )
 from ultralytics.utils import ROOT, yaml_load
+from quality.quality import SegmentationModelWithQuality
+from quality.qtrain import QualityTrainer
+from quality.qval import QualityValidator
+from quality.qpredict import QualityPredictor
 
 
 class YOLO(Model):
@@ -86,6 +90,12 @@ class YOLO(Model):
                 "trainer": yolo.obb.OBBTrainer,
                 "validator": yolo.obb.OBBValidator,
                 "predictor": yolo.obb.OBBPredictor,
+            },
+            "segment with score": {
+                "model": SegmentationModelWithQuality,
+                "trainer": QualityTrainer,
+                "validator": QualityValidator,
+                "predictor": QualityPredictor,
             },
         }
 

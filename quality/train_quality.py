@@ -26,7 +26,7 @@ torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 # torch.use_deterministic_algorithms(True)
 
-model = YOLO(model=YOLO_GCN_MODEL_PATH, task="segment")
+model = YOLO(model=YOLO_GCN_MODEL_PATH, task="segment with score")
 
 results = model.train(
     data="/home/ubuntu/WZX/A4C_GCN/my_traindata.yml",  # 替换为你的data.yml路径
