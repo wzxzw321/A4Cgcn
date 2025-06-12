@@ -7,9 +7,9 @@ from ultralytics.models import yolo
 from ultralytics.utils import DEFAULT_CFG, RANK
 from ultralytics.utils.plotting import plot_images, plot_results
 
-from quality.quality import SegmentationModelWithQuality
-from quality.qval import QualityValidator
-from quality.SegmentationWithQualityDataset import SegmentationWithQualityDataset
+from qualityscore.quality import SegmentationModelWithQuality
+from qualityscore.qval import QualityValidator
+from qualityscore.SegmentationWithQualityDataset import SegmentationWithQualityDataset
 
 
 class QualityTrainer(yolo.segment.SegmentationTrainer):
@@ -18,8 +18,8 @@ class QualityTrainer(yolo.segment.SegmentationTrainer):
     1. __init__: 将 task 改为 "segment with score"；
     2. get_model: 返回 SegmentationModelWithQuality；
     3. get_validator: 返回 QualityValidator，并将 loss_names 增加 "quality_loss"；
-    4. compute_loss: 先计算原生分割 loss，再计算 quality 回归 loss（MSE），最后加权合并；
-    5. plot_metrics: 在绘制原生分割指标后，额外打印 quality 回归指标到 TensorBoard/控制台。
+    4. compute_loss: 先计算原生分割 loss，再计算 qualityscore 回归 loss（MSE），最后加权合并；
+    5. plot_metrics: 在绘制原生分割指标后，额外打印 qualityscore 回归指标到 TensorBoard/控制台。
     """
 
     def __init__(self, cfg=DEFAULT_CFG, overrides=None, _callbacks=None):
@@ -34,7 +34,7 @@ class QualityTrainer(yolo.segment.SegmentationTrainer):
         self.weight_seg = hyp.get("seg_loss", 1.0)
         self.weight_quality = hyp.get("quality_loss", 1.0)
 
-        # 额外的 quality 回归损失函数：MSELoss
+        # 额外的 qualityscore 回归损失函数：MSELoss
         self.quality_loss_fn = torch.nn.MSELoss(reduction="mean")
 
     def get_model(self, cfg=None, weights=None, verbose=True):
@@ -113,7 +113,7 @@ class QualityTrainer(yolo.segment.SegmentationTrainer):
         """
         计算训练时的总 loss，包括：
           1. 调用父类 compute_loss 得到原生分割相关 loss（已包含检测 + 分割）；
-          2. 拿到 quality_pred → 与 batch["quality"] 做 MSE → 得到 quality_loss；
+          2. 拿到 quality_pred → 与 batch["qualityscore"] 做 MSE → 得到 quality_loss；
           3. 按权重相加： total_loss = weight_seg * seg_loss + weight_quality * quality_loss；
         返回一个字典：
           {
@@ -126,7 +126,7 @@ class QualityTrainer(yolo.segment.SegmentationTrainer):
           }
         """
         # images: [B,3,H,W]
-        # batch: dict，除了包含 "img", "cls", "bboxes", "masks" 外，还要包含 "quality": [B]
+        # batch: dict，除了包含 "img", "cls", "bboxes", "masks" 外，还要包含 "qualityscore": [B]
         # 注意：Ultralytics 内部可能会把 "img" 重命名为 "img" 或 "images"。这里假设 batch["img"] 就是 images。
 
         imgs = images
@@ -151,12 +151,12 @@ class QualityTrainer(yolo.segment.SegmentationTrainer):
         cls_loss = loss_vector[2] / bs
         dfl_loss = loss_vector[3] / bs
 
-        # ---------- 2. 计算 quality 回归 loss ----------
-        if "quality" not in batch:
+        # ---------- 2. 计算 qualityscore 回归 loss ----------
+        if "qualityscore" not in batch:
             raise KeyError(
-                "QualityTrainer 需要从 batch 中读取 'quality' 标签，请检查 Dataset 是否返回了 batch['quality']。"
+                "QualityTrainer 需要从 batch 中读取 'qualityscore' 标签，请检查 Dataset 是否返回了 batch['qualityscore']。"
             )
-        quality_gt = batch["quality"].to(quality_pred.device)  # [B]
+        quality_gt = batch["qualityscore"].to(quality_pred.device)  # [B]
         quality_loss = self.quality_loss_fn(quality_pred, quality_gt)  # MSE
 
         # ---------- 3. 加权合并所有 loss ----------
@@ -186,7 +186,7 @@ class QualityTrainer(yolo.segment.SegmentationTrainer):
         #     fname=self.save_dir / f"train_batch{ni}.jpg", on_plot=self.on_plot,
         # )
         #
-        # 我们在可视化时，把 quality 标签也当做文字 overlay 到图上。
+        # 我们在可视化时，把 qualityscore 标签也当做文字 overlay 到图上。
 
         imgs = batch["img"]
         batch_idx = batch["batch_idx"]
@@ -194,12 +194,12 @@ class QualityTrainer(yolo.segment.SegmentationTrainer):
         bboxes = batch["bboxes"]
         masks = batch["masks"]
         paths = batch.get("im_file", None)
-        quality_gt = batch["quality"]  # [B]
+        quality_gt = batch["qualityscore"]  # [B]
 
-        # 直接调用原版 plot_images，可通过 on_plot 回调在标注区打印 quality：
+        # 直接调用原版 plot_images，可通过 on_plot 回调在标注区打印 qualityscore：
         def on_plot_with_quality(im, ax, idx):
             """
-            在 ultralytics.utils.plotting.plot_images 的 on_plot 回调基础上叠加 quality 文本。
+            在 ultralytics.utils.plotting.plot_images 的 on_plot 回调基础上叠加 qualityscore 文本。
             idx: 当前图在 batch 中的索引
             """
             q = float(quality_gt[idx].item())

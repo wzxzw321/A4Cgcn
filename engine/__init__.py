@@ -1,4 +1,4 @@
-from quality import *
+from qualityscore import *
 from .model import YOLO
 __all__ = (
     "SegmentationWithQualityDataset",

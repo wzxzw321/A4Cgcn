@@ -11,7 +11,7 @@ from ultralytics.utils.checks import check_requirements
 from ultralytics.utils.metrics import SegmentMetrics, box_iou, mask_iou
 from ultralytics.utils.plotting import output_to_target, plot_images
 
-from quality.quality import SegmentationModelWithQuality  # 替换为实际路径
+from qualityscore.quality import SegmentationModelWithQuality  # 替换为实际路径
 
 
 class QualityValidator(DetectionValidator):
@@ -36,19 +36,19 @@ class QualityValidator(DetectionValidator):
         """
         1. 调用父类预处理（包括 images → device, targets → device 等）；
         2. 把 batch["masks"] 转为 float 并送到 device；
-        3. 把 batch["quality"] 也送到 device，方便后续在 update_metrics 中直接使用。
+        3. 把 batch["qualityscore"] 也送到 device，方便后续在 update_metrics 中直接使用。
         """
         batch = super().preprocess(batch)
         batch["masks"] = batch["masks"].to(self.device).float()
-        if "quality" in batch:
-            batch["quality"] = batch["quality"].to(self.device).float()
+        if "qualityscore" in batch:
+            batch["qualityscore"] = batch["qualityscore"].to(self.device).float()
         else:
-            raise KeyError("QualityValidator 需要 batch 中包含 'quality' 标签。")
+            raise KeyError("QualityValidator 需要 batch 中包含 'qualityscore' 标签。")
         return batch
 
     def init_metrics(self, model):
         """
-        初始化度量。与原生 SegmentationValidator 保持一致，只是额外清空 quality 列表。
+        初始化度量。与原生 SegmentationValidator 保持一致，只是额外清空 qualityscore 列表。
         """
         super().init_metrics(model)
         self.plot_masks = []
@@ -112,9 +112,9 @@ class QualityValidator(DetectionValidator):
     def update_metrics(self, preds, batch):
         """
         1. preds: 来自 postprocess，形如 (predn, proto)；
-        2. batch: 包含 'cls', 'bboxes', 'masks', 以及 'quality'；
+        2. batch: 包含 'cls', 'bboxes', 'masks', 以及 'qualityscore'；
         3. 先调用父类原有分割评估逻辑；
-        4. 然后把 self._last_quality（[B]）与 batch['quality'] 累积到列表。
+        4. 然后把 self._last_quality（[B]）与 batch['qualityscore'] 累积到列表。
         """
         # 先执行原生分割更新
         super().update_metrics(preds, batch)
@@ -124,7 +124,7 @@ class QualityValidator(DetectionValidator):
         # 并且 postprocess 存储了单张图的 quality_pred，这里直接取 self._last_quality[si]
         # 但 self._last_quality 是 [B]，要跟 batch 顺序一一对应。
         quality_batch = self._last_quality.to(self.device)  # [B]
-        quality_gt_batch = batch["quality"]  # [B]
+        quality_gt_batch = batch["qualityscore"]  # [B]
 
         # 累积到列表，后续 finalize_metrics 统一计算
         self.quality_preds.append(quality_batch.cpu())
@@ -139,7 +139,7 @@ class QualityValidator(DetectionValidator):
         # 调用父类，让其把 speed、confusion_matrix 等写入 self.metrics
         super().finalize_metrics(*args, **kwargs)
 
-        # 把所有 batch 的 quality 预测/GT 拼接
+        # 把所有 batch 的 qualityscore 预测/GT 拼接
         preds = torch.cat(self.quality_preds, dim=0)  # [N_val]
         gts = torch.cat(self.quality_gts, dim=0)      # [N_val]
 
@@ -148,7 +148,7 @@ class QualityValidator(DetectionValidator):
         rmse = torch.sqrt(((preds - gts) ** 2).mean()).item()
 
         # 将结果写入 self.metrics.stats（或打印到控制台/日志）
-        # SegmentMetrics.keys 包含 mAP/mIoU 等键，这里我们可以把 quality 键附加进去
+        # SegmentMetrics.keys 包含 mAP/mIoU 等键，这里我们可以把 qualityscore 键附加进去
         self.metrics.stats["quality_mae"] = mae
         self.metrics.stats["quality_rmse"] = rmse
 

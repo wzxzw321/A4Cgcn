@@ -16,10 +16,10 @@ from ultralytics.nn.tasks import (
     YOLOESegModel,
 )
 from ultralytics.utils import ROOT, yaml_load
-from quality.quality import SegmentationModelWithQuality
-from quality.qtrain import QualityTrainer
-from quality.qval import QualityValidator
-from quality.qpredict import QualityPredictor
+from qualityscore.quality import SegmentationModelWithQuality
+from qualityscore.qtrain import QualityTrainer
+from qualityscore.qval import QualityValidator
+from qualityscore.qpredict import QualityPredictor
 
 
 class YOLO(Model):

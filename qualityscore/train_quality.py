@@ -26,10 +26,10 @@ torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 # torch.use_deterministic_algorithms(True)
 
-model = YOLO(model=YOLO_GCN_MODEL_PATH, task="segment with score")
+model = YOLO(model=QUALITY_TEST_PATH, task="segment with score")
 
 results = model.train(
-    data="/home/ubuntu/WZX/A4C_GCN/my_traindata.yml",  # 替换为你的data.yml路径
+    data="/home/ubuntu/WZX/A4C_GCN/qualityscore/my_traindata_quality.yml",  # 替换为你的data.yml路径
     epochs=220,                     # 训练轮数
     batch=8,                        # 批次大小（根据GPU显存调整）
     imgsz=640,                      # 输入图像尺寸

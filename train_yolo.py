@@ -26,6 +26,7 @@ torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 # torch.use_deterministic_algorithms(True)
 
+# model = YOLO(model=QUALITY_TEST_PATH, task="segment")
 model = YOLO(model=YOLO_GCN_MODEL_PATH, task="segment")
 
 results = model.train(

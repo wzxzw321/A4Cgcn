@@ -13,3 +13,5 @@ YOLO_GCN_MODEL_PATH = "/home/ubuntu/WZX/A4C_GCN/yolov8g-seg-gcn.yaml"
 SEED = 1234
 # set points
 POINTS = 40
+# quality path
+QUALITY_TEST_PATH = "/home/ubuntu/WZX/A4C_GCN/qualityscore/yolov8g-seg-quality.yaml"

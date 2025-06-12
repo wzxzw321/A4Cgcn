@@ -11,13 +11,13 @@ from torch.utils.data import Dataset
 
 class SegmentationWithQualityDataset(Dataset):
     """
-    用于 YOLOv8 分割任务的自定义 Dataset，同时读取 quality 文件夹的质量分数。
+    用于 YOLOv8 分割任务的自定义 Dataset，同时读取 qualityscore 文件夹的质量分数。
     数据目录结构示例：
         root/
         ├── train/
         │   ├── images/       # *.jpg / *.png
         │   ├── labels/       # *.txt，每行：class x1 y1 x2 y2 ... （所有坐标为归一化 [0,1]）
-        │   └── quality/      # *.txt，每行单个数字（1–5）
+        │   └── qualityscore/      # *.txt，每行单个数字（1–5）
         ├── val/  (同上)
         └── test/ (同上)
 
@@ -36,7 +36,7 @@ class SegmentationWithQualityDataset(Dataset):
           "bboxes":   Tensor [N, 4]，float32，xyxy 像素坐标
           "im_file":  str，图像原始路径
           "batch_idx":Tensor( index )，int64
-          "quality":  Tensor( score )，float32，图像质量分数
+          "qualityscore":  Tensor( score )，float32，图像质量分数
         }
     """
 
@@ -48,7 +48,7 @@ class SegmentationWithQualityDataset(Dataset):
 
         self.img_dir = self.root / split / "images"
         self.label_dir = self.root / split / "labels"
-        self.quality_dir = self.root / split / "quality"
+        self.quality_dir = self.root / split / "qualityscore"
 
         exts = (".jpg", ".jpeg", ".png", ".bmp")
         self.img_files = sorted([p for p in self.img_dir.iterdir() if p.suffix.lower() in exts])
@@ -118,7 +118,7 @@ class SegmentationWithQualityDataset(Dataset):
             bboxes = torch.zeros((0, 4), dtype=torch.float32)
             classes = torch.zeros((0,), dtype=torch.long)
 
-        # 3. 读取 quality 分数
+        # 3. 读取 qualityscore 分数
         quality_path = self.quality_dir / f"{stem}.txt"
         if not quality_path.exists():
             raise FileNotFoundError(f"未找到质量标签: {quality_path}")
@@ -138,5 +138,5 @@ class SegmentationWithQualityDataset(Dataset):
             "bboxes": bboxes,             # [N, 4]
             "im_file": str(img_path),     # 原始路径
             "batch_idx": torch.tensor(index, dtype=torch.int64),
-            "quality": quality,           # 单标量
+            "qualityscore": quality,           # 单标量
         }
